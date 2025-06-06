@@ -1,3 +1,0 @@
-C:\Users\AylaE\Desktop\EC kurser\Molntjanster\Assignment\VentixeUI\VentixeUI\obj\Release\net8.0\browser-wasm\PubTmp\Out\appsettings.json
-C:\Users\AylaE\Desktop\EC kurser\Molntjanster\Assignment\VentixeUI\VentixeUI\obj\Release\net8.0\browser-wasm\PubTmp\Out\emcc-props.json
-C:\Users\AylaE\Desktop\EC kurser\Molntjanster\Assignment\VentixeUI\VentixeUI\obj\Release\net8.0\browser-wasm\PubTmp\Out\web.config
