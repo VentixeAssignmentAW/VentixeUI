@@ -1,0 +1,69 @@
+﻿<div class="nav-menu">
+    <nav class="flex-column">
+        <div class="nav-item">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="bookings">
+                <i class="fas fa-calendar-check"></i>
+                <span>Bookings</span>
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="events">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Events</span>
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="invoices">
+                <i class="fas fa-file-invoice"></i>
+                <span>Invoices(Upcoming)</span>
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="inbox">
+                <i class="fas fa-inbox"></i>
+                <span>Inbox(Upcoming)</span>
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="calendar">
+                <i class="fas fa-calendar"></i>
+                <span>Calendar(Upcoming)</span>
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="financials">
+                <i class="fas fa-chart-line"></i>
+                <span>Financials(Upcoming)</span>
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="gallery">
+                <i class="fas fa-images"></i>
+                <span>Gallery(Upcoming)</span>
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="feedback">
+                <i class="fas fa-comment-alt"></i>
+                <span>Feedback(Upcoming)</span>
+            </NavLink>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

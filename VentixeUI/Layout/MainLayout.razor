@@ -1,0 +1,100 @@
+﻿@inherits LayoutComponentBase
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="page">
+    <div class="sidebar">
+        <div class="brand-logo">
+            <div class="d-flex align-items-center">
+                <img src="images/logotype.svg" alt="Ventixe Logo" style="width: 32px; height: 32px;" />
+                <span class="brand-name">Ventixe</span>
+            </div>
+        </div>
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="header">
+            <div class="d-flex align-items-center justify-content-between w-100">
+                <PageHeader />
+                <div class="d-flex align-items-center">
+                    <div class="search-box me-4">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Search anything">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="action-buttons d-flex gap-3">
+                            <button class="btn btn-icon position-relative">
+                                <i class="fas fa-bell"></i>
+                            </button>
+                            <div class="settings-dropdown">
+                                <button class="btn btn-icon" @onclick="ToggleSettingsMenu">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                                <div class="settings-menu @(_showSettings ? "show" : "")">
+                                    <div class="settings-item">
+                                        <span>Dark Mode</span>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="darkModeToggle" checked="@_isDarkMode" @onchange="OnThemeToggle">
+                                            <label for="darkModeToggle"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="user-info ms-4">
+                            <div class="user-name">Orlando Laurentius</div>
+                            <div class="user-role">Admin</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <article class="content">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    private bool _showSettings;
+    private bool _isDarkMode;
+    private IJSObjectReference? _themeModule;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _themeModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/theme.js");
+            _isDarkMode = await _themeModule.InvokeAsync<bool>("initializeTheme");
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleSettingsMenu()
+    {
+        _showSettings = !_showSettings;
+    }
+
+    private async Task OnThemeToggle(ChangeEventArgs e)
+    {
+        if (_themeModule != null)
+        {
+            _isDarkMode = (bool?)e.Value ?? false;
+            await _themeModule.InvokeVoidAsync("toggleTheme", _isDarkMode);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_themeModule != null)
+        {
+            await _themeModule.DisposeAsync();
+        }
+    }
+}

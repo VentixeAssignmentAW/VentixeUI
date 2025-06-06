@@ -1,0 +1,194 @@
+@page "/bookings"
+@using VentixeUI.Services
+@using System.ComponentModel.DataAnnotations
+@inject IEventService EventService
+@inject IBookingService BookingService
+
+<PageTitle>Bookings - Ventixe</PageTitle>
+
+<div class="page-container">
+    <div class="page-header">
+        <h1>Book an Event</h1>
+    </div>
+
+    <div class="events-grid">
+        @foreach (var evt in AvailableEvents)
+        {
+            var status = GetEventStatus(evt);
+            <div class="event-card-wrapper">
+                <div class="event-card">
+                    <div class="event-details">
+                        <div class="event-header">
+                            <h3 class="event-title">@evt.Title</h3>
+                            <span class="badge @GetStatusClass(status)">@status</span>
+                        </div>
+                        <div class="event-date">
+                            <i class="fas fa-calendar me-2"></i>
+                            <span>Start: @evt.StartTime.ToString("MMM d, yyyy HH:mm")</span>
+                        </div>
+                        <div class="event-date">
+                            <i class="fas fa-calendar-check me-2"></i>
+                            <span>End: @evt.EndTime.ToString("MMM d, yyyy HH:mm")</span>
+                        </div>
+                        <button class="btn btn-primary book-button" @onclick="() => OpenBookingModal(evt)" disabled="@(status == EventStatus.Finished)">
+                            Book Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Booking Modal -->
+    @if (showBookingModal && selectedEvent != null)
+    {
+        <div class="modal fade show" style="display: block;" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Book Event: @selectedEvent.Title</h5>
+                        <button type="button" class="btn-close" @onclick="CloseBookingModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <EditForm Model="@bookingModel" OnValidSubmit="@HandleValidSubmit">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <InputText id="email" class="form-control" @bind-Value="bookingModel.Email" />
+                                <ValidationMessage For="@(() => bookingModel.Email)" />
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" @onclick="CloseBookingModal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Book Now</button>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+    }
+
+    @if (showSuccessMessage)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            Booking created successfully!
+            <button type="button" class="btn-close" @onclick="() => showSuccessMessage = false"></button>
+        </div>
+    }
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+</div>
+
+@code {
+    private List<EventDto> AvailableEvents = new();
+    private bool showBookingModal = false;
+    private EventDto? selectedEvent;
+    private BookingModel bookingModel = new();
+    private bool showSuccessMessage = false;
+    private string? errorMessage;
+
+    public enum EventStatus
+    {
+        Ongoing,
+        Upcoming,
+        Finished
+    }
+
+    public class BookingModel
+    {
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Email { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEvents();
+    }
+
+    private async Task LoadEvents()
+    {
+        try
+        {
+            var allEvents = await EventService.GetAllEventsAsync();
+            // Only show ongoing and upcoming events
+            AvailableEvents = allEvents
+                .Where(e => GetEventStatus(e) != EventStatus.Finished)
+                .OrderBy(e => e.StartTime)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error loading events. Please try again later.";
+            Console.WriteLine($"Error loading events: {ex.Message}");
+        }
+    }
+
+    private EventStatus GetEventStatus(EventDto evt)
+    {
+        var now = DateTime.Now;
+        
+        if (now > evt.EndTime)
+            return EventStatus.Finished;
+        if (now < evt.StartTime)
+            return EventStatus.Upcoming;
+        return EventStatus.Ongoing;
+    }
+
+    private string GetStatusClass(EventStatus status) => status switch
+    {
+        EventStatus.Ongoing => "bg-success",
+        EventStatus.Upcoming => "bg-primary",
+        EventStatus.Finished => "bg-secondary",
+        _ => "bg-secondary"
+    };
+
+    private void OpenBookingModal(EventDto evt)
+    {
+        selectedEvent = evt;
+        bookingModel = new BookingModel();
+        showBookingModal = true;
+        errorMessage = null;
+    }
+
+    private void CloseBookingModal()
+    {
+        showBookingModal = false;
+        selectedEvent = null;
+        errorMessage = null;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            if (selectedEvent == null) return;
+
+            var booking = new CreateBookingRequest
+            {
+                EventId = selectedEvent.Id,
+                Email = bookingModel.Email
+            };
+
+            await BookingService.CreateBookingAsync(booking);
+            CloseBookingModal();
+            showSuccessMessage = true;
+            await LoadEvents(); // Refresh the events list
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error creating booking. Please try again.";
+            Console.WriteLine($"Error creating booking: {ex.Message}");
+        }
+    }
+} 

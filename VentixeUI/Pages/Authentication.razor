@@ -1,0 +1,14 @@
+﻿@* @page "/authentication/{action}"
+
+<RemoteAuthenticatorView Action="@Action">
+    <LogOut>
+        <div class="auth-container">
+            <h2>Logging out...</h2>
+        </div>
+    </LogOut>
+</RemoteAuthenticatorView>
+
+@code {
+    [Parameter] public string? Action { get; set; }
+}
+ *@

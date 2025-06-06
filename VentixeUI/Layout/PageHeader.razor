@@ -1,0 +1,27 @@
+@inject NavigationManager NavigationManager
+
+<div class="page-title">
+    @if (IsEventsPage)
+    {
+        <div class="breadcrumb-nav">
+            <NavLink href="" class="breadcrumb-link">Dashboard</NavLink>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item active">Events</span>
+        </div>
+        <h1>Events</h1>
+    }
+    else
+    {
+        <h1>Dashboard</h1>
+        <p class="text-muted mb-0">Hello Orlando, welcome back!</p>
+    }
+</div>
+
+@code {
+    private bool IsEventsPage => NavigationManager.Uri.EndsWith("/events", StringComparison.OrdinalIgnoreCase);
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += (s, e) => StateHasChanged();
+    }
+} 

@@ -1,0 +1,168 @@
+@page "/events"
+@using VentixeUI.Services
+@inject IEventService EventService
+
+<PageTitle>Events - Ventixe</PageTitle>
+
+<div class="events-page">
+    <!-- Status Filters -->
+    <div class="filter-bar mb-4">
+        <div class="status-tabs">
+            <button class="status-tab @(CurrentFilter == EventStatus.Ongoing ? "active" : "")" @onclick="() => FilterByStatus(EventStatus.Ongoing)">
+                Ongoing
+                <span class="count">(@GetStatusCount(EventStatus.Ongoing))</span>
+            </button>
+            <button class="status-tab @(CurrentFilter == EventStatus.Upcoming ? "active" : "")" @onclick="() => FilterByStatus(EventStatus.Upcoming)">
+                Upcoming
+                <span class="count">(@GetStatusCount(EventStatus.Upcoming))</span>
+            </button>
+            <button class="status-tab @(CurrentFilter == EventStatus.Finished ? "active" : "")" @onclick="() => FilterByStatus(EventStatus.Finished)">
+                Finished
+                <span class="count">(@GetStatusCount(EventStatus.Finished))</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="row g-4">
+        @foreach (var evt in CurrentPageEvents)
+        {
+            var status = GetEventStatus(evt);
+            <div class="col-md-6 col-lg-4">
+                <div class="event-card">
+                    <div class="event-details p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h3 class="event-title mb-0">@evt.Title</h3>
+                            <span class="badge @GetStatusClass(status)">@status</span>
+                        </div>
+                        <div class="event-date mb-2">
+                            <i class="fas fa-calendar me-2"></i>
+                            <span class="me-3">Start: @evt.StartTime.ToString("MMM d, yyyy HH:mm")</span>
+                        </div>
+                        <div class="event-date">
+                            <i class="fas fa-calendar-check me-2"></i>
+                            <span>End: @evt.EndTime.ToString("MMM d, yyyy HH:mm")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if (TotalPages > 1)
+    {
+        <div class="pagination-bar mt-4">
+            <div class="showing-info">
+                Showing @((CurrentPage - 1) * PageSize + 1) to @Math.Min(CurrentPage * PageSize, FilteredEvents.Count) of @FilteredEvents.Count
+            </div>
+            <nav>
+                <ul class="pagination">
+                    <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)" disabled="@(CurrentPage == 1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                    </li>
+                    @for (int i = StartPage; i <= EndPage; i++)
+                    {
+                        var pageNumber = i;
+                        <li class="page-item @(pageNumber == CurrentPage ? "active" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
+                        </li>
+                    }
+                    <li class="page-item @(CurrentPage == TotalPages ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)" disabled="@(CurrentPage == TotalPages)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+@code {
+    private List<EventDto> AllEvents = new();
+    private List<EventDto> FilteredEvents = new();
+    private List<EventDto> CurrentPageEvents = new();
+    private EventStatus CurrentFilter = EventStatus.Ongoing;
+    private int CurrentPage = 1;
+    private int PageSize = 9;
+    private int TotalPages => (int)Math.Ceiling(FilteredEvents.Count / (double)PageSize);
+    private int StartPage => Math.Max(1, CurrentPage - 2);
+    private int EndPage => Math.Min(TotalPages, StartPage + 4);
+
+    public enum EventStatus
+    {
+        Ongoing,
+        Upcoming,
+        Finished
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEvents();
+    }
+
+    private async Task LoadEvents()
+    {
+        try
+        {
+            AllEvents = (await EventService.GetAllEventsAsync()).ToList();
+            FilterByStatus(CurrentFilter);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading events: {ex.Message}");
+        }
+    }
+
+    private void FilterByStatus(EventStatus status)
+    {
+        CurrentFilter = status;
+        FilteredEvents = AllEvents.Where(e => GetEventStatus(e) == status).ToList();
+        CurrentPage = 1;
+        UpdateCurrentPageEvents();
+    }
+
+    private void UpdateCurrentPageEvents()
+    {
+        CurrentPageEvents = FilteredEvents
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize)
+            .ToList();
+    }
+
+    private int GetStatusCount(EventStatus status)
+    {
+        return AllEvents.Count(e => GetEventStatus(e) == status);
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages && page != CurrentPage)
+        {
+            CurrentPage = page;
+            UpdateCurrentPageEvents();
+        }
+    }
+
+    private EventStatus GetEventStatus(EventDto evt)
+    {
+        var now = DateTime.Now;
+        
+        if (now > evt.EndTime)
+            return EventStatus.Finished;
+        if (now < evt.StartTime)
+            return EventStatus.Upcoming;
+        return EventStatus.Ongoing;
+    }
+
+    private string GetStatusClass(EventStatus status) => status switch
+    {
+        EventStatus.Ongoing => "bg-success",
+        EventStatus.Upcoming => "bg-primary",
+        EventStatus.Finished => "bg-secondary",
+        _ => "bg-secondary"
+    };
+} 
