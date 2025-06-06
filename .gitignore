@@ -5,6 +5,10 @@ bin/
 obj/
 wwwroot/dist/
 wwwroot/node_modules/
+.vs
+bin/
+obj/
+
 
 # User-specific files
 *.user
