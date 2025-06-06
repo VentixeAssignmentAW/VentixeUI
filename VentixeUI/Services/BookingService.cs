@@ -35,6 +35,7 @@ public class BookingService : IBookingService
     {
         try
         {
+            request.Price = 500;
             var response = await _httpClient.PostAsJsonAsync("api/booking", request);
             if (response.IsSuccessStatusCode)
             {
